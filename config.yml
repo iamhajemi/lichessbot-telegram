@@ -1,4 +1,4 @@
-#token: "lip_oCuKUZ9x76q1sDQrMxv8"    # Lichess OAuth2 Token.  Alehkine cat Karpov bot
+#token: "My_Lichess_Token"    # Lichess OAuth2 Token.  Alehkine cat Karpov bot
 token: "lip_1zcojw7AZa3k2aGF6CsR"    # Lichess OAuth2 Token.  Alehkine cat
 url: "https://lichess.org/"        # Lichess base URL.
 
