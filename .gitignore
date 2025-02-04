@@ -11,6 +11,11 @@ lichess_bot_auto_logs/*
 config.yml
 config.bak
 .config.yml.sw*
+# Config ve backup dosyaları
+config.yml.backup
+*.backup
+# Token ve config dosyaları
+.token_temp
 
 
 

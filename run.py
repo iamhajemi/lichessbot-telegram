@@ -3,6 +3,7 @@ import os
 import time
 import sys
 import shutil
+import re
 
 def setup_config():
     """Konfigurasyon dosyasını hazırla."""
@@ -56,26 +57,74 @@ def update_from_github():
                                       capture_output=True, text=True, check=True)
                 if changes.stdout.strip():
                     print("Yeni güncellemeler bulundu. İndiriliyor...")
-                    # config.yml'i yedekle
+                    # Token'ı geçici dosyaya kaydet
                     if os.path.exists('config.yml'):
-                        shutil.copy2('config.yml', 'config.yml.backup')
+                        import yaml
+                        try:
+                            with open('config.yml', 'r', encoding='utf-8') as f:
+                                config = yaml.safe_load(f)
+                                token = config.get('token', '')
+                                # Token'ı geçici bir dosyaya kaydet
+                                with open('.token_temp', 'w', encoding='utf-8') as tf:
+                                    tf.write(token)
+                        except Exception as e:
+                            print(f"Token yedekleme hatası: {e}")
+                    
                     # En son değişiklikleri indir
                     subprocess.run(['git', 'pull', 'origin', default_branch], check=True)
-                    # config.yml'i geri yükle
-                    if os.path.exists('config.yml.backup'):
-                        shutil.move('config.yml.backup', 'config.yml')
+                    
+                    # Token'ı geri yükle
+                    if os.path.exists('.token_temp'):
+                        try:
+                            with open('.token_temp', 'r', encoding='utf-8') as tf:
+                                token = tf.read().strip()
+                            with open('config.yml', 'r', encoding='utf-8') as f:
+                                config_content = f.read()
+                            # Token'ı güncelle
+                            config_content = re.sub(r'token: ".*?"', f'token: "{token}"', config_content)
+                            with open('config.yml', 'w', encoding='utf-8') as f:
+                                f.write(config_content)
+                            # Geçici dosyayı sil
+                            os.remove('.token_temp')
+                        except Exception as e:
+                            print(f"Token geri yükleme hatası: {e}")
+                    
                     print("Bot başarıyla güncellendi!")
                 else:
                     print("Bot zaten güncel.")
             except subprocess.CalledProcessError:
                 print("Güncelleme kontrolü sırasında hata oluştu. Zorla güncelleme deneniyor...")
-                # config.yml'i yedekle
+                # Token'ı geçici dosyaya kaydet
                 if os.path.exists('config.yml'):
-                    shutil.copy2('config.yml', 'config.yml.backup')
+                    import yaml
+                    try:
+                        with open('config.yml', 'r', encoding='utf-8') as f:
+                            config = yaml.safe_load(f)
+                            token = config.get('token', '')
+                            # Token'ı geçici bir dosyaya kaydet
+                            with open('.token_temp', 'w', encoding='utf-8') as tf:
+                                tf.write(token)
+                    except Exception as e:
+                        print(f"Token yedekleme hatası: {e}")
+                
                 subprocess.run(['git', 'reset', '--hard', f'origin/{default_branch}'], check=True)
-                # config.yml'i geri yükle
-                if os.path.exists('config.yml.backup'):
-                    shutil.move('config.yml.backup', 'config.yml')
+                
+                # Token'ı geri yükle
+                if os.path.exists('.token_temp'):
+                    try:
+                        with open('.token_temp', 'r', encoding='utf-8') as tf:
+                            token = tf.read().strip()
+                        with open('config.yml', 'r', encoding='utf-8') as f:
+                            config_content = f.read()
+                        # Token'ı güncelle
+                        config_content = re.sub(r'token: ".*?"', f'token: "{token}"', config_content)
+                        with open('config.yml', 'w', encoding='utf-8') as f:
+                            f.write(config_content)
+                        # Geçici dosyayı sil
+                        os.remove('.token_temp')
+                    except Exception as e:
+                        print(f"Token geri yükleme hatası: {e}")
+                
                 print("Bot başarıyla güncellendi!")
             
     except subprocess.CalledProcessError as e:

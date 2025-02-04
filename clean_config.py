@@ -1,5 +1,15 @@
 import sys
 import re
+import yaml
+
+def get_token_from_config():
+    """Mevcut config dosyasından token'ı al"""
+    try:
+        with open('config.yml', 'r', encoding='utf-8') as f:
+            config = yaml.safe_load(f)
+            return config.get('token', '')
+    except:
+        return ''
 
 def clean_token():
     """Git push öncesi token'ı maskele"""
@@ -11,16 +21,12 @@ def clean_token():
 def restore_token():
     """Git pull sonrası token'ı koru"""
     content = sys.stdin.read()
-    # Eğer maskelenmiş token varsa, orijinal token'ı koru
-    if 'token: "xxxxxxxxxxxxx"' in content:
-        try:
-            with open('config.yml', 'r') as f:
-                original = f.read()
-                original_token = re.search(r'token: "(.*?)"', original)
-                if original_token:
-                    content = content.replace('token: "xxxxxxxxxxxxx"', f'token: "{original_token.group(1)}"')
-        except FileNotFoundError:
-            pass
+    current_token = get_token_from_config()
+    
+    if current_token:
+        # Maskelenmiş token'ı mevcut token ile değiştir
+        content = re.sub(r'token: ".*?"', f'token: "{current_token}"', content)
+    
     sys.stdout.write(content)
 
 if __name__ == "__main__":
