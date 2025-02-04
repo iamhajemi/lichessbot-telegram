@@ -25,15 +25,34 @@ def update_from_github():
             print("Git repo bulunamadı. Yeni repo oluşturuluyor...")
             subprocess.run(['git', 'init'], check=True)
             subprocess.run(['git', 'remote', 'add', 'origin', 'https://github.com/iamhajemi/lichessbot-telegram.git'], check=True)
-            # İlk kez klonlama yapılıyorsa master branch'i oluştur
             subprocess.run(['git', 'fetch', 'origin'], check=True)
-            subprocess.run(['git', 'checkout', '-b', 'master', 'origin/master'], check=True)
+            try:
+                # Master branch'i kontrol et
+                subprocess.run(['git', 'checkout', 'master'], check=True)
+            except subprocess.CalledProcessError:
+                # Master branch yoksa main'i dene
+                try:
+                    subprocess.run(['git', 'checkout', 'main'], check=True)
+                except subprocess.CalledProcessError:
+                    # Hiçbiri yoksa yeni branch oluştur
+                    subprocess.run(['git', 'checkout', '-b', 'master'], check=True)
+                    subprocess.run(['git', 'pull', 'origin', 'master'], check=True)
         else:
+            # Remote branch'i kontrol et
+            result = subprocess.run(['git', 'branch', '-r'], capture_output=True, text=True)
+            if 'origin/master' in result.stdout:
+                default_branch = 'master'
+            elif 'origin/main' in result.stdout:
+                default_branch = 'main'
+            else:
+                # Eğer remote branch bulunamazsa, varsayılan olarak master kullan
+                default_branch = 'master'
+            
             # Uzak değişiklikleri kontrol et
             subprocess.run(['git', 'fetch', 'origin'], check=True)
             try:
                 # Değişiklikleri kontrol et
-                changes = subprocess.run(['git', 'diff', 'HEAD', 'origin/master', '--name-only'],
+                changes = subprocess.run(['git', 'diff', 'HEAD', f'origin/{default_branch}', '--name-only'],
                                       capture_output=True, text=True, check=True)
                 if changes.stdout.strip():
                     print("Yeni güncellemeler bulundu. İndiriliyor...")
@@ -41,7 +60,7 @@ def update_from_github():
                     if os.path.exists('config.yml'):
                         shutil.copy2('config.yml', 'config.yml.backup')
                     # En son değişiklikleri indir
-                    subprocess.run(['git', 'pull', 'origin', 'master'], check=True)
+                    subprocess.run(['git', 'pull', 'origin', default_branch], check=True)
                     # config.yml'i geri yükle
                     if os.path.exists('config.yml.backup'):
                         shutil.move('config.yml.backup', 'config.yml')
@@ -53,7 +72,7 @@ def update_from_github():
                 # config.yml'i yedekle
                 if os.path.exists('config.yml'):
                     shutil.copy2('config.yml', 'config.yml.backup')
-                subprocess.run(['git', 'reset', '--hard', 'origin/master'], check=True)
+                subprocess.run(['git', 'reset', '--hard', f'origin/{default_branch}'], check=True)
                 # config.yml'i geri yükle
                 if os.path.exists('config.yml.backup'):
                     shutil.move('config.yml.backup', 'config.yml')
