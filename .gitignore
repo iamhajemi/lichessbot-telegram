@@ -8,8 +8,10 @@ lichess_bot_auto_logs/*
 *.log
 /venv/*
 
-# Config ve yedek dosyalar
+# Config dosyası
 config.yml
+
+# Config ve yedek dosyalar
 config.yml.backup
 config.yml.default
 *.backup
