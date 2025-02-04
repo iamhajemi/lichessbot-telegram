@@ -7,14 +7,11 @@ lichess_bot_auto_logs/*
 *.pgn
 *.log
 /venv/*
-# Config dosyası
-config.yml
-config.bak
-.config.yml.sw*
-# Config ve backup dosyaları
+
+# Backup ve geçici dosyalar
 config.yml.backup
 *.backup
-# Token ve config dosyaları
+.config.yml.sw*
 .token_temp
 
 
