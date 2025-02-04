@@ -3,19 +3,6 @@ import os
 import time
 import sys
 import shutil
-import re
-
-def setup_config():
-    """Konfigurasyon dosyasını hazırla."""
-    if not os.path.exists('config.yml'):
-        if os.path.exists('config.yml.default'):
-            print("config.yml bulunamadı. config.yml.default'tan kopyalanıyor...")
-            shutil.copy2('config.yml.default', 'config.yml')
-            print("config.yml oluşturuldu. Lütfen token bilgilerinizi güncelleyin.")
-            sys.exit(1)
-        else:
-            print("HATA: Ne config.yml ne de config.yml.default dosyası bulunamadı!")
-            sys.exit(1)
 
 def update_from_github():
     """GitHub'dan en son değişiklikleri kontrol et ve güncelle."""
@@ -26,105 +13,28 @@ def update_from_github():
             print("Git repo bulunamadı. Yeni repo oluşturuluyor...")
             subprocess.run(['git', 'init'], check=True)
             subprocess.run(['git', 'remote', 'add', 'origin', 'https://github.com/iamhajemi/lichessbot-telegram.git'], check=True)
+            # İlk kez klonlama yapılıyorsa master branch'i oluştur
             subprocess.run(['git', 'fetch', 'origin'], check=True)
-            try:
-                # Master branch'i kontrol et
-                subprocess.run(['git', 'checkout', 'master'], check=True)
-            except subprocess.CalledProcessError:
-                # Master branch yoksa main'i dene
-                try:
-                    subprocess.run(['git', 'checkout', 'main'], check=True)
-                except subprocess.CalledProcessError:
-                    # Hiçbiri yoksa yeni branch oluştur
-                    subprocess.run(['git', 'checkout', '-b', 'master'], check=True)
-                    subprocess.run(['git', 'pull', 'origin', 'master'], check=True)
+            subprocess.run(['git', 'checkout', '-b', 'master', 'origin/master'], check=True)
         else:
-            # Remote branch'i kontrol et
-            result = subprocess.run(['git', 'branch', '-r'], capture_output=True, text=True)
-            if 'origin/master' in result.stdout:
-                default_branch = 'master'
-            elif 'origin/main' in result.stdout:
-                default_branch = 'main'
-            else:
-                # Eğer remote branch bulunamazsa, varsayılan olarak master kullan
-                default_branch = 'master'
-            
             # Uzak değişiklikleri kontrol et
             subprocess.run(['git', 'fetch', 'origin'], check=True)
             try:
                 # Değişiklikleri kontrol et
-                changes = subprocess.run(['git', 'diff', 'HEAD', f'origin/{default_branch}', '--name-only'],
+                changes = subprocess.run(['git', 'diff', 'HEAD', 'origin/master', '--name-only'],
                                       capture_output=True, text=True, check=True)
                 if changes.stdout.strip():
                     print("Yeni güncellemeler bulundu. İndiriliyor...")
-                    # Token'ı geçici dosyaya kaydet
-                    if os.path.exists('config.yml'):
-                        import yaml
-                        try:
-                            with open('config.yml', 'r', encoding='utf-8') as f:
-                                config = yaml.safe_load(f)
-                                token = config.get('token', '')
-                                # Token'ı geçici bir dosyaya kaydet
-                                with open('.token_temp', 'w', encoding='utf-8') as tf:
-                                    tf.write(token)
-                        except Exception as e:
-                            print(f"Token yedekleme hatası: {e}")
-                    
+                    # Yerel değişiklikleri yedekle
+                    subprocess.run(['git', 'stash'], check=True)
                     # En son değişiklikleri indir
-                    subprocess.run(['git', 'pull', 'origin', default_branch], check=True)
-                    
-                    # Token'ı geri yükle
-                    if os.path.exists('.token_temp'):
-                        try:
-                            with open('.token_temp', 'r', encoding='utf-8') as tf:
-                                token = tf.read().strip()
-                            with open('config.yml', 'r', encoding='utf-8') as f:
-                                config_content = f.read()
-                            # Token'ı güncelle
-                            config_content = re.sub(r'token: ".*?"', f'token: "{token}"', config_content)
-                            with open('config.yml', 'w', encoding='utf-8') as f:
-                                f.write(config_content)
-                            # Geçici dosyayı sil
-                            os.remove('.token_temp')
-                        except Exception as e:
-                            print(f"Token geri yükleme hatası: {e}")
-                    
+                    subprocess.run(['git', 'pull', 'origin', 'master'], check=True)
                     print("Bot başarıyla güncellendi!")
                 else:
                     print("Bot zaten güncel.")
             except subprocess.CalledProcessError:
                 print("Güncelleme kontrolü sırasında hata oluştu. Zorla güncelleme deneniyor...")
-                # Token'ı geçici dosyaya kaydet
-                if os.path.exists('config.yml'):
-                    import yaml
-                    try:
-                        with open('config.yml', 'r', encoding='utf-8') as f:
-                            config = yaml.safe_load(f)
-                            token = config.get('token', '')
-                            # Token'ı geçici bir dosyaya kaydet
-                            with open('.token_temp', 'w', encoding='utf-8') as tf:
-                                tf.write(token)
-                    except Exception as e:
-                        print(f"Token yedekleme hatası: {e}")
-                
-                subprocess.run(['git', 'reset', '--hard', f'origin/{default_branch}'], check=True)
-                
-                # Token'ı geri yükle
-                if os.path.exists('.token_temp'):
-                    try:
-                        with open('.token_temp', 'r', encoding='utf-8') as tf:
-                            token = tf.read().strip()
-                        with open('config.yml', 'r', encoding='utf-8') as f:
-                            config_content = f.read()
-                        # Token'ı güncelle
-                        config_content = re.sub(r'token: ".*?"', f'token: "{token}"', config_content)
-                        with open('config.yml', 'w', encoding='utf-8') as f:
-                            f.write(config_content)
-                        # Geçici dosyayı sil
-                        os.remove('.token_temp')
-                    except Exception as e:
-                        print(f"Token geri yükleme hatası: {e}")
-                
+                subprocess.run(['git', 'reset', '--hard', 'origin/master'], check=True)
                 print("Bot başarıyla güncellendi!")
             
     except subprocess.CalledProcessError as e:
@@ -173,9 +83,6 @@ def run_bot():
 
 if __name__ == "__main__":
     try:
-        # Konfigurasyon dosyasını kontrol et
-        setup_config()
-        
         # Virtual environment oluştur
         create_virtualenv()
         

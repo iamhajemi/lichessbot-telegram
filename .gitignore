@@ -8,15 +8,12 @@ lichess_bot_auto_logs/*
 *.log
 /venv/*
 
-# Config dosyası
+# Config dosyaları
 config.yml
-
-# Config ve yedek dosyalar
-config.yml.backup
-config.yml.default
-*.backup
-.config.yml.sw*
-.token_temp
+config.bak
+.config.yml.*
+config.yml.bak
+!config.yml.default
 
 
 
