@@ -11,21 +11,30 @@ def get_token_from_config():
     except:
         return ''
 
+def mask_token(content):
+    """Token'ı maskele"""
+    # Token satırını bul ve değiştir (daha sıkı bir regex ile)
+    pattern = r'(token:\s*)"[^"]*"'
+    return re.sub(pattern, r'\1"xxxxxxxxxxxxx"', content)
+
 def clean_token():
     """Git push öncesi token'ı maskele"""
     content = sys.stdin.read()
-    # Token satırını bul ve değiştir
-    content = re.sub(r'token: ".*?"', 'token: "xxxxxxxxxxxxx"', content)
-    sys.stdout.write(content)
+    masked_content = mask_token(content)
+    if masked_content != content:  # Eğer değişiklik yapıldıysa
+        print("Token maskelendi", file=sys.stderr)
+    sys.stdout.write(masked_content)
 
 def restore_token():
     """Git pull sonrası token'ı koru"""
     content = sys.stdin.read()
     current_token = get_token_from_config()
     
-    if current_token:
+    if current_token and 'token: "xxxxxxxxxxxxx"' in content:
         # Maskelenmiş token'ı mevcut token ile değiştir
-        content = re.sub(r'token: ".*?"', f'token: "{current_token}"', content)
+        pattern = r'(token:\s*)"[^"]*"'
+        content = re.sub(pattern, f'\\1"{current_token}"', content)
+        print("Token geri yüklendi", file=sys.stderr)
     
     sys.stdout.write(content)
 
