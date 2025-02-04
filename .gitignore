@@ -6,5 +6,8 @@ lichess_bot_auto_logs/*
 .vs/*
 *.pgn
 *.log
+/venv/*
+
+
 
 
