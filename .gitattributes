@@ -1,2 +1,5 @@
 # Auto detect text files and perform LF normalization
 * text=auto
+
+config.yml filter=clean-token
+*.yml diff=clean-token

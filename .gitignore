@@ -7,6 +7,10 @@ lichess_bot_auto_logs/*
 *.pgn
 *.log
 /venv/*
+# Config dosyası
+config.yml
+config.bak
+.config.yml.sw*
 
 
 

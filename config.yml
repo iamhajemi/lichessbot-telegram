@@ -1,10 +1,9 @@
-#token: "My_Lichess_Token"    # Lichess OAuth2 Token.  Alehkine cat Karpov bot
-token: "lip_1zcojw7AZa3k2aGF6CsR"    # Lichess OAuth2 Token.  Alehkine cat
+token: "xxxxxxxxxxxxx"    # Lichess OAuth2 Token.  Alehkine cat
 url: "https://lichess.org/"        # Lichess base URL.
 
 engine:                            # Engine settings.
   dir: "./"                # Directory containing the engine. This can be an absolute path or one relative to lichess-bot/.
-  name: "./engines/ubuntu"              # Binary name of the engine to use.
+  name: "./engines/stockfish.exe"              # Binary name of the engine to use.
   working_dir: ""                  # Directory where the chess engine will read and write files. If blank or missing, the current directory is used.
                                    # NOTE: If working_dir is set, the engine will look for files and directories relative to this directory, not where lichess-bot was launched. Absolute paths are unaffected.
   protocol: "uci"                  # "uci", "xboard" or "homemade"

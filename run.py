@@ -4,6 +4,18 @@ import time
 import sys
 import shutil
 
+def setup_config():
+    """Konfigurasyon dosyasını hazırla."""
+    if not os.path.exists('config.yml'):
+        if os.path.exists('config.yml.default'):
+            print("config.yml bulunamadı. config.yml.default'tan kopyalanıyor...")
+            shutil.copy2('config.yml.default', 'config.yml')
+            print("config.yml oluşturuldu. Lütfen token bilgilerinizi güncelleyin.")
+            sys.exit(1)
+        else:
+            print("HATA: Ne config.yml ne de config.yml.default dosyası bulunamadı!")
+            sys.exit(1)
+
 def update_from_github():
     """GitHub'dan en son değişiklikleri kontrol et ve güncelle."""
     print("GitHub'dan güncellemeler kontrol ediliyor...")
@@ -12,7 +24,7 @@ def update_from_github():
         if not os.path.exists('.git'):
             print("Git repo bulunamadı. Yeni repo oluşturuluyor...")
             subprocess.run(['git', 'init'], check=True)
-            subprocess.run(['git', 'remote', 'add', 'origin', 'https://github.com/lichess-bot-devs/lichess-bot.git'], check=True)
+            subprocess.run(['git', 'remote', 'add', 'origin', 'https://github.com/iamhajemi/lichessbot-telegram.git'], check=True)
             # İlk kez klonlama yapılıyorsa master branch'i oluştur
             subprocess.run(['git', 'fetch', 'origin'], check=True)
             subprocess.run(['git', 'checkout', '-b', 'master', 'origin/master'], check=True)
@@ -25,16 +37,26 @@ def update_from_github():
                                       capture_output=True, text=True, check=True)
                 if changes.stdout.strip():
                     print("Yeni güncellemeler bulundu. İndiriliyor...")
-                    # Yerel değişiklikleri yedekle
-                    subprocess.run(['git', 'stash'], check=True)
+                    # config.yml'i yedekle
+                    if os.path.exists('config.yml'):
+                        shutil.copy2('config.yml', 'config.yml.backup')
                     # En son değişiklikleri indir
                     subprocess.run(['git', 'pull', 'origin', 'master'], check=True)
+                    # config.yml'i geri yükle
+                    if os.path.exists('config.yml.backup'):
+                        shutil.move('config.yml.backup', 'config.yml')
                     print("Bot başarıyla güncellendi!")
                 else:
                     print("Bot zaten güncel.")
             except subprocess.CalledProcessError:
                 print("Güncelleme kontrolü sırasında hata oluştu. Zorla güncelleme deneniyor...")
+                # config.yml'i yedekle
+                if os.path.exists('config.yml'):
+                    shutil.copy2('config.yml', 'config.yml.backup')
                 subprocess.run(['git', 'reset', '--hard', 'origin/master'], check=True)
+                # config.yml'i geri yükle
+                if os.path.exists('config.yml.backup'):
+                    shutil.move('config.yml.backup', 'config.yml')
                 print("Bot başarıyla güncellendi!")
             
     except subprocess.CalledProcessError as e:
@@ -69,6 +91,9 @@ def run_bot():
     
     while True:
         try:
+            # Her çalıştırmada güncelleme kontrolü yap
+            update_from_github()
+            
             # Bot'u çalıştır
             subprocess.run([venv_python, os.path.join(bot_directory, "lichess-bot.py")], check=True)
             print("Bot stopped unexpectedly, attempting restart in 5 seconds...")
@@ -80,6 +105,9 @@ def run_bot():
 
 if __name__ == "__main__":
     try:
+        # Konfigurasyon dosyasını kontrol et
+        setup_config()
+        
         # Virtual environment oluştur
         create_virtualenv()
         
